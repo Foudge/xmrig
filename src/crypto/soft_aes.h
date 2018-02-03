@@ -89,20 +89,35 @@
 alignas(16) const uint32_t saes_table[4][256] = { saes_data(saes_u0), saes_data(saes_u1), saes_data(saes_u2), saes_data(saes_u3) };
 alignas(16) const uint8_t  saes_sbox[256] = saes_data(saes_h0);
 
-static inline __m128i soft_aesenc(const uint32_t* in, __m128i key)
+
+static inline void soft_aesenc(uint32_t* key, uint32_t* in, uint32_t* out)
 {
-	const uint32_t x0 = in[0];
-	const uint32_t x1 = in[1];
-	const uint32_t x2 = in[2];
-	const uint32_t x3 = in[3];
+	uint32_t x0 = in[0];
+	uint32_t x1 = in[1];
+	uint32_t x2 = in[2];
+	uint32_t x3 = in[3];
 
-	__m128i out = _mm_set_epi32(
-		(saes_table[0][x3 & 0xff] ^ saes_table[1][(x0 >> 8) & 0xff] ^ saes_table[2][(x1 >> 16) & 0xff] ^ saes_table[3][x2 >> 24]),
-		(saes_table[0][x2 & 0xff] ^ saes_table[1][(x3 >> 8) & 0xff] ^ saes_table[2][(x0 >> 16) & 0xff] ^ saes_table[3][x1 >> 24]),
-		(saes_table[0][x1 & 0xff] ^ saes_table[1][(x2 >> 8) & 0xff] ^ saes_table[2][(x3 >> 16) & 0xff] ^ saes_table[3][x0 >> 24]),
-		(saes_table[0][x0 & 0xff] ^ saes_table[1][(x1 >> 8) & 0xff] ^ saes_table[2][(x2 >> 16) & 0xff] ^ saes_table[3][x3 >> 24]));
+	out[0] = key[0] ^ (saes_table[0][x0 & 0xff] ^ saes_table[1][(x1 >> 8) & 0xff] ^ saes_table[2][(x2 >> 16) & 0xff] ^ saes_table[3][x3 >> 24]);
+	out[1] = key[1] ^ (saes_table[0][x1 & 0xff] ^ saes_table[1][(x2 >> 8) & 0xff] ^ saes_table[2][(x3 >> 16) & 0xff] ^ saes_table[3][x0 >> 24]);
+	out[2] = key[2] ^ (saes_table[0][x2 & 0xff] ^ saes_table[1][(x3 >> 8) & 0xff] ^ saes_table[2][(x0 >> 16) & 0xff] ^ saes_table[3][x1 >> 24]);
+	out[3] = key[3] ^ (saes_table[0][x3 & 0xff] ^ saes_table[1][(x0 >> 8) & 0xff] ^ saes_table[2][(x1 >> 16) & 0xff] ^ saes_table[3][x2 >> 24]);
+}
 
-	return _mm_xor_si128(out, key);
+static inline void soft_aes_round(uint32_t* key, uint32_t* in, uint32_t* out)
+{
+	uint32_t x0, x1, x2, x3;
+	for (uint32_t i = 0; i < 32; i += 4)
+	{
+		x0 = in[i];
+		x1 = in[i + 1];
+		x2 = in[i + 2];
+		x3 = in[i + 3];
+
+		out[i] = key[0] ^ (saes_table[0][x0 & 0xff] ^ saes_table[1][(x1 >> 8) & 0xff] ^ saes_table[2][(x2 >> 16) & 0xff] ^ saes_table[3][x3 >> 24]);
+		out[i + 1] = key[1] ^ (saes_table[0][x1 & 0xff] ^ saes_table[1][(x2 >> 8) & 0xff] ^ saes_table[2][(x3 >> 16) & 0xff] ^ saes_table[3][x0 >> 24]);
+		out[i + 2] = key[2] ^ (saes_table[0][x2 & 0xff] ^ saes_table[1][(x3 >> 8) & 0xff] ^ saes_table[2][(x0 >> 16) & 0xff] ^ saes_table[3][x1 >> 24]);
+		out[i + 3] = key[3] ^ (saes_table[0][x3 & 0xff] ^ saes_table[1][(x0 >> 8) & 0xff] ^ saes_table[2][(x1 >> 16) & 0xff] ^ saes_table[3][x2 >> 24]);
+	}
 }
 
 static inline uint32_t sub_word(uint32_t key)
