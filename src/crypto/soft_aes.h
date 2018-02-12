@@ -89,6 +89,14 @@
 alignas(16) const uint32_t saes_table[4][256] = { saes_data(saes_u0), saes_data(saes_u1), saes_data(saes_u2), saes_data(saes_u3) };
 alignas(16) const uint8_t  saes_sbox[256] = saes_data(saes_h0);
 
+#if defined(_MSC_VER) && defined(_M_AMD64)
+extern "C"
+{
+	void explode_scratchpad_asm(uint32_t* key, uint32_t* in, uint32_t* out, uint32_t memory);
+	void implode_scratchpad_asm(uint32_t* key, uint32_t* in, uint32_t* out, uint32_t memory);
+	void aes_enc_iterations_asm(uint8_t* memory, uint8_t* state0, uint32_t iterations, uint32_t mask);
+}
+#endif
 
 static inline void soft_aesenc(uint32_t* key, uint32_t* in, uint32_t* out)
 {
