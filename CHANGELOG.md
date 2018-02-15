@@ -1,3 +1,11 @@
+# v2.4.4 F3
+ - Up to 50% performance increase with software AES implementation (for CPU without AES-NI support)
+ - Fixed L2 cache size calculation of Intel Core 2 processor family
+
+# v2.4.4 F2
+ - Up to 20% performance increase with software AES implementation (for CPU without AES-NI support)
+ - Fixed compilation warnings under MSVC
+
 # v2.4.4
  - Added libmicrohttpd version to --version output.
  - Fixed bug in singal handler, in some cases miner wasn't shutdown properly.
