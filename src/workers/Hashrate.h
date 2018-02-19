@@ -47,15 +47,19 @@ public:
     void updateHighest();
 
     inline double highest() const { return m_highest; }
+    inline double average() const { return m_average; }
     inline int threads() const    { return m_threads; }
 
 private:
     static void onReport(uv_timer_t *handle);
+    void updateHighest(double shortHashrate);
+    void updateAverage();
 
-    constexpr static size_t kBucketSize = 2 << 11;
+    constexpr static size_t kBucketSize = 1 << 11;
     constexpr static size_t kBucketMask = kBucketSize - 1;
 
     double m_highest;
+    double m_average;
     int m_threads;
     uint32_t* m_top;
     uint64_t** m_counts;

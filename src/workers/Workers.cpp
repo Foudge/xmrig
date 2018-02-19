@@ -112,7 +112,7 @@ void Workers::start(int64_t affinity, int priority)
 
     uv_async_init(uv_default_loop(), &m_async, Workers::onResult);
     uv_timer_init(uv_default_loop(), &m_timer);
-    uv_timer_start(&m_timer, Workers::onTick, 500, 500);
+    uv_timer_start(&m_timer, Workers::onTick, 1000, 1000);
 
     for (int i = 0; i < threads; ++i) {
         Handle *handle = new Handle(i, threads, affinity, priority);
@@ -190,7 +190,7 @@ void Workers::onTick(uv_timer_t *handle)
         m_hashrate->add(handle->threadId(), handle->worker()->hashCount(), handle->worker()->timestamp());
     }
 
-    if ((m_ticks++ & 0xF) == 0)  {
+    if ((++m_ticks & 0x7) == 0)  {
         m_hashrate->updateHighest();
     }
 
