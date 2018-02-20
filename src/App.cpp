@@ -131,7 +131,8 @@ int App::exec()
     Summary::print();
 
 #   ifndef XMRIG_NO_API
-    Api::start();
+    if (m_options->apiPort())
+        Api::start();
 #   endif
 
 #   ifndef XMRIG_NO_HTTPD
