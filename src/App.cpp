@@ -181,6 +181,11 @@ void App::onConsoleCommand(char command)
         }
         break;
 
+    case 's':
+    case 'S':
+        m_network->printState();
+        break;
+
     case 3:
         LOG_WARN("Ctrl+C received, exiting");
         close();

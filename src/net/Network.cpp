@@ -93,6 +93,19 @@ void Network::stop()
 }
 
 
+void Network::printState()
+{
+    uint32_t total = m_state.totalTime();
+    uint32_t hours = total / 3600;
+    uint32_t minutes = (total % 3600) / 60;
+    uint32_t secondes = total % 60;
+
+    LOG_INFO(m_options->colors() ? "\x1B[01;37mshares  \x1B[0mtotal/accept/reject \x1B[01;37m%" PRIu64 "\x1B[0m/\x1B[01;32m%" PRIu64 "\x1B[0m/\x1B[01;31m%" PRIu64 "  \x1B[0muptime \x1B[01;37m%02u:%02u:%02u"
+        : "shares  total/accept/reject %" PRIu64 "/%" PRIu64 "/%" PRIu64 "  uptime %02u:%02u:%02u",
+        m_state.accepted + m_state.rejected, m_state.accepted, m_state.rejected, hours, minutes, secondes);
+}
+
+
 void Network::onActive(Client *client)
 {
     if (client->id() == -1) {
