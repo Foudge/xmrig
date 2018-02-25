@@ -207,30 +207,27 @@ static inline void cn_explode_scratchpad(const __m128i *input, __m128i *output)
 {
 	if (SOFT_AES)
 	{
+        __m128i keys[10];
+        aes_genkey<SOFT_AES>(input, keys, keys + 1, keys + 2, keys + 3, keys + 4, keys + 5, keys + 6, keys + 7, keys + 8, keys + 9);
 #if defined(_MSC_VER) && defined(_M_AMD64)
-		__m128i keys[10];
-		aes_genkey<SOFT_AES>(input, keys, keys + 1, keys + 2, keys + 3, keys + 4, keys + 5, keys + 6, keys + 7, keys + 8, keys + 9);
 		explode_scratchpad_asm((uint32_t*)keys, (uint32_t*)input, (uint32_t*)output, MEM);
 #else
-		__m128i k0, k1, k2, k3, k4, k5, k6, k7, k8, k9;
-		aes_genkey<SOFT_AES>(input, &k0, &k1, &k2, &k3, &k4, &k5, &k6, &k7, &k8, &k9);
-
 		uint32_t *xin = (uint32_t *)(input + 4);
 		uint32_t *xout = NULL;
 		for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 		{
 			xout = (uint32_t *)(output + i);
 
-			soft_aes_round((uint32_t *)&k0, xin, xout);
-			soft_aes_round((uint32_t *)&k1, xout, xout);
-			soft_aes_round((uint32_t *)&k2, xout, xout);
-			soft_aes_round((uint32_t *)&k3, xout, xout);
-			soft_aes_round((uint32_t *)&k4, xout, xout);
-			soft_aes_round((uint32_t *)&k5, xout, xout);
-			soft_aes_round((uint32_t *)&k6, xout, xout);
-			soft_aes_round((uint32_t *)&k7, xout, xout);
-			soft_aes_round((uint32_t *)&k8, xout, xout);
-			soft_aes_round((uint32_t *)&k9, xout, xout);
+			soft_aes_round((uint32_t *)(keys + 0), xin, xout);
+			soft_aes_round((uint32_t *)(keys + 1), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 2), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 3), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 4), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 5), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 6), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 7), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 8), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 9), xout, xout);
 
 			xin = xout;
 		}
@@ -282,30 +279,27 @@ static inline void cn_implode_scratchpad(const __m128i *input, __m128i *output)
 {
 	if (SOFT_AES)
 	{
+        __m128i keys[10];
+        aes_genkey<SOFT_AES>(output + 2, keys, keys + 1, keys + 2, keys + 3, keys + 4, keys + 5, keys + 6, keys + 7, keys + 8, keys + 9);
 #if defined(_MSC_VER) && defined(_M_AMD64)
-		__m128i keys[10];
-		aes_genkey<SOFT_AES>(output + 2, keys, keys + 1, keys + 2, keys + 3, keys + 4, keys + 5, keys + 6, keys + 7, keys + 8, keys + 9);
 		implode_scratchpad_asm((uint32_t*)keys, (uint32_t*)input, (uint32_t*)output, MEM);
 #else
-		__m128i k0, k1, k2, k3, k4, k5, k6, k7, k8, k9;
-		aes_genkey<SOFT_AES>(output + 2, &k0, &k1, &k2, &k3, &k4, &k5, &k6, &k7, &k8, &k9);
-
 		uint32_t *xout = (uint32_t *)(output + 4);
 		for (size_t i = 0; i < MEM / sizeof(__m128i); i += 8)
 		{
 			for (size_t j = 0; j < 32; j++)
 				xout[j] ^= ((uint32_t *)(input + i))[j];
 
-			soft_aes_round((uint32_t *)&k0, xout, xout);
-			soft_aes_round((uint32_t *)&k1, xout, xout);
-			soft_aes_round((uint32_t *)&k2, xout, xout);
-			soft_aes_round((uint32_t *)&k3, xout, xout);
-			soft_aes_round((uint32_t *)&k4, xout, xout);
-			soft_aes_round((uint32_t *)&k5, xout, xout);
-			soft_aes_round((uint32_t *)&k6, xout, xout);
-			soft_aes_round((uint32_t *)&k7, xout, xout);
-			soft_aes_round((uint32_t *)&k8, xout, xout);
-			soft_aes_round((uint32_t *)&k9, xout, xout);
+			soft_aes_round((uint32_t *)(keys + 0), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 1), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 2), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 3), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 4), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 5), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 6), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 7), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 8), xout, xout);
+			soft_aes_round((uint32_t *)(keys + 9), xout, xout);
 		}
 #endif
 	}
@@ -379,7 +373,6 @@ inline void cryptonight_hash(const void *__restrict__ input, size_t size, void *
 		uint64_t ah0 = h0[1] ^ h0[5];
 		uint64_t bl0 = h0[2] ^ h0[6];
 		uint64_t bh0 = h0[3] ^ h0[7];
-		uint64_t idx0 = h0[0] ^ h0[4];
 
 		VAR_ALIGN(16, uint64_t key[2]);
 		VAR_ALIGN(16, uint64_t cx[2]);
@@ -390,18 +383,17 @@ inline void cryptonight_hash(const void *__restrict__ input, size_t size, void *
 		{
 			key[0] = al0;
 			key[1] = ah0;
-			pl0 = (uint64_t*)&l0[idx0 & MASK];
+			pl0 = (uint64_t*)&l0[al0 & MASK];
 			soft_aesenc((uint32_t*)&key, (uint32_t*)pl0, (uint32_t*)&cx);
 			pl0[0] = bl0 ^ cx[0];
 			pl0[1] = bh0 ^ cx[1];
 			bl0 = cx[0];
 			bh0 = cx[1];
-			idx0 = bl0;
 
-			pl0 = (uint64_t*)&l0[idx0 & MASK];
+			pl0 = (uint64_t*)&l0[bl0 & MASK];
 			cl = pl0[0];
 			ch = pl0[1];
-			lo = __umul128(idx0, cl, &hi);
+			lo = __umul128(bl0, cl, &hi);
 
 			al0 += hi;
 			ah0 += lo;
@@ -411,7 +403,6 @@ inline void cryptonight_hash(const void *__restrict__ input, size_t size, void *
 
 			ah0 ^= ch;
 			al0 ^= cl;
-			idx0 = al0;
 		}
 #endif
 	}
