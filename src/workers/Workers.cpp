@@ -114,8 +114,16 @@ void Workers::start(int64_t affinity, int priority)
     uv_timer_init(uv_default_loop(), &m_timer);
     uv_timer_start(&m_timer, Workers::onTick, 1000, 1000);
 
+    // if the mask width is equal to the number of threads,
+    // then using a strict thread affinity (1 thread on only 1 logical processor)
+    bool useStrictThreadAffinity = false;
+    if (affinity != -1L && threads > 1) {
+        useStrictThreadAffinity = (getCpuMaskWidth(affinity) == threads);
+    }
+
     for (int i = 0; i < threads; ++i) {
-        Handle *handle = new Handle(i, threads, affinity, priority);
+        uint64_t threadAffinity = useStrictThreadAffinity ? getThreadAffinity(affinity, i) : affinity;
+        Handle *handle = new Handle(i, threads, threadAffinity, priority);
         m_workers.push_back(handle);
         handle->start(Workers::onReady);
     }
@@ -197,4 +205,29 @@ void Workers::onTick(uv_timer_t *handle)
 #   ifndef XMRIG_NO_API
     Api::tick(m_hashrate);
 #   endif
+}
+
+int Workers::getCpuMaskWidth(int64_t mask)
+{
+    int count = 0;
+    while (mask)
+    {
+        count += mask & 1;
+        mask >>= 1;
+    }
+    return count;
+}
+
+
+int64_t Workers::getThreadAffinity(int64_t cpuMask, int threadId)
+{
+    int affinity = 1;
+    int count = cpuMask & affinity;
+    while (count < (threadId + 1) && affinity < cpuMask)
+    {
+        affinity <<= 1;
+        if (cpuMask & affinity)
+            count++;
+    }
+    return (affinity > cpuMask) ? cpuMask : affinity;
 }
