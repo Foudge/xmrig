@@ -34,7 +34,6 @@ bool Mem::m_doubleHash = false;
 int Mem::m_algo        = 0;
 int Mem::m_flags       = 0;
 int Mem::m_threads     = 0;
-size_t Mem::m_offset   = 0;
 uint8_t *Mem::m_memory = nullptr;
 uint32_t Mem::m_hugepages_errorcode = 0;
 
@@ -53,18 +52,6 @@ cryptonight_ctx *Mem::create(int threadId)
     ctx->memory = &m_memory[MEMORY * (threadId * ratio + 1)];
 
     return ctx;
-}
-
-
-
-void *Mem::calloc(size_t num, size_t size)
-{
-    void *mem = &m_memory[m_offset];
-    m_offset += (num * size);
-
-    memset(mem, 0, num * size);
-
-    return mem;
 }
 
 

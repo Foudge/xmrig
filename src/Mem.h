@@ -46,7 +46,6 @@ public:
 
     static bool allocate(int algo, int threads, bool doubleHash, bool enabled);
     static cryptonight_ctx *create(int threadId);
-    static void *calloc(size_t num, size_t size);
     static void release();
 
     static inline bool isDoubleHash()           { return m_doubleHash; }
@@ -61,7 +60,6 @@ private:
     static int m_algo;
     static int m_flags;
     static int m_threads;
-    static size_t m_offset;
     VAR_ALIGN(16, static uint8_t *m_memory);
     static uint32_t m_hugepages_errorcode;
 
