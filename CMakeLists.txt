@@ -108,7 +108,13 @@ set(SOURCES_CRYPTO
     src/crypto/c_skein.c
     src/crypto/CryptoNight.cpp
    )
-
+   
+if (CMAKE_CL_64)
+    enable_language(ASM_MASM)
+    set(SOURCES_ASM 
+    src/crypto/soft_aes.asm)
+endif()
+  
 if (WIN32)
     set(SOURCES_OS
         res/app.rc
@@ -204,5 +210,5 @@ include_directories(src)
 include_directories(src/3rdparty)
 include_directories(${UV_INCLUDE_DIR})
 
-add_executable(xmrig ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_CPUID} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_SYSLOG} ${HTTPD_SOURCES})
+add_executable(xmrig ${HEADERS} ${SOURCES} ${SOURCES_OS} ${SOURCES_CPUID} ${HEADERS_CRYPTO} ${SOURCES_CRYPTO} ${SOURCES_ASM} ${SOURCES_SYSLOG} ${HTTPD_SOURCES})
 target_link_libraries(xmrig ${UV_LIBRARIES} ${MHD_LIBRARY} ${EXTRA_LIBS} ${CPUID_LIB})

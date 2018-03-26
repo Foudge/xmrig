@@ -83,7 +83,21 @@ void Cpu::initCommon()
     cpuid_get_raw_data(&raw);
     cpu_identify(&raw, &data);
 
-    strncpy(m_brand, data.brand_str, sizeof(m_brand) - 1);
+    //copy CPU brand name without useless space characters
+    size_t srcIdx = 0;
+    size_t dstIdx = 0;
+    size_t brandSize = strlen(data.brand_str);
+    while (srcIdx < brandSize) {
+        char c1 = data.brand_str[srcIdx];
+        char c2 = data.brand_str[srcIdx + 1];
+        //trim left&right and skip duplicate spaces
+        if (!(c1 == ' ' && (dstIdx == 0 || c2 == ' ' || c2 == 0)))
+        {
+            m_brand[dstIdx] = c1;
+            dstIdx++;
+        }
+        srcIdx++;
+    }
 
     m_totalThreads = data.total_logical_cpus;
     m_sockets      = m_totalThreads / data.num_logical_cpus;

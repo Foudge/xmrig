@@ -61,6 +61,8 @@ private:
     static void onReady(void *arg);
     static void onResult(uv_async_t *handle);
     static void onTick(uv_timer_t *handle);
+    static int getCpuMaskWidth(int64_t mask);
+    static int64_t getThreadAffinity(int64_t cpuMask, int threadId);
 
     static bool m_active;
     static bool m_enabled;

@@ -47,6 +47,7 @@ public:
 
   void connect();
   void stop();
+  void printState();
 
 protected:
   void onActive(Client *client) override;

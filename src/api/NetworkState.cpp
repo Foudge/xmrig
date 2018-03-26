@@ -41,12 +41,20 @@ NetworkState::NetworkState() :
     m_active(false)
 {
     memset(pool, 0, sizeof(pool));
+    m_connectionTime = 0;
+    m_totalTime = 0;
 }
 
 
-int NetworkState::connectionTime() const
+uint32_t NetworkState::totalTime() const
 {
-    return m_active ? (int)((uv_now(uv_default_loop()) - m_connectionTime) / 1000) : 0;
+    return m_totalTime + connectionTime();
+}
+
+
+uint32_t NetworkState::connectionTime() const
+{
+    return m_active ? (uint32_t)((uv_now(uv_default_loop()) - m_connectionTime) / 1000) : 0;
 }
 
 
@@ -105,6 +113,7 @@ void NetworkState::setPool(const char *host, int port, const char *ip)
 
 void NetworkState::stop()
 {
+    m_totalTime += connectionTime();
     m_active = false;
     diff     = 0;
 

@@ -1,3 +1,22 @@
+# v2.4.4 F4
+ - Up to 2% performance increase with software AES implementation (MSVC build only)
+ - Added error code if 'huge pages' is disabled (Windows only)
+ - Added new command: displaying shares statistics (with 'S' key) 
+ - Hashrates: 2.5s/60s/15min/max replaced by current/avg/max
+ - Fixed API completly disabled if API port is 0
+ - Fixed CPU brand name displayed without useless space characters
+
+# v2.4.4 F3
+ - Up to 50% performance increase with software AES implementation (for CPU without AES-NI support)
+ - Fixed L2 cache size calculation of Intel Core 2 processor family
+
+# v2.4.4 F2
+ - Up to 20% performance increase with software AES implementation (for CPU without AES-NI support)
+ - Fixed compilation warnings under MSVC
+
+# v2.4.4 F1
+  Not officially published.
+  
 # v2.4.4
  - Added libmicrohttpd version to --version output.
  - Fixed bug in singal handler, in some cases miner wasn't shutdown properly.

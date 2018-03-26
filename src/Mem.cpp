@@ -36,6 +36,7 @@ int Mem::m_flags       = 0;
 int Mem::m_threads     = 0;
 size_t Mem::m_offset   = 0;
 uint8_t *Mem::m_memory = nullptr;
+uint32_t Mem::m_hugepages_errorcode = 0;
 
 
 cryptonight_ctx *Mem::create(int threadId)

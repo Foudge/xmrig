@@ -131,7 +131,8 @@ int App::exec()
     Summary::print();
 
 #   ifndef XMRIG_NO_API
-    Api::start();
+    if (m_options->apiPort())
+        Api::start();
 #   endif
 
 #   ifndef XMRIG_NO_HTTPD
@@ -178,6 +179,11 @@ void App::onConsoleCommand(char command)
             LOG_INFO(m_options->colors() ? "\x1B[01;32mresumed" : "resumed");
             Workers::setEnabled(true);
         }
+        break;
+
+    case 's':
+    case 'S':
+        m_network->printState();
         break;
 
     case 3:

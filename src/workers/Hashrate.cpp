@@ -45,6 +45,7 @@ inline const char *format(double h, char* buf, size_t size)
 
 Hashrate::Hashrate(int threads) :
     m_highest(0.0),
+    m_average(0.0),
     m_threads(threads)
 {
     m_counts     = new uint64_t*[threads];
@@ -52,12 +53,12 @@ Hashrate::Hashrate(int threads) :
     m_top        = new uint32_t[threads];
 
     for (int i = 0; i < threads; i++) {
-        m_counts[i] = new uint64_t[kBucketSize];
-        m_timestamps[i] = new uint64_t[kBucketSize];
+        m_counts[i] = new uint64_t[kBucketSize + 1];
+        m_timestamps[i] = new uint64_t[kBucketSize + 1];
         m_top[i] = 0;
 
-        memset(m_counts[0], 0, sizeof(uint64_t) * kBucketSize);
-        memset(m_timestamps[0], 0, sizeof(uint64_t) * kBucketSize);
+        memset(m_counts[i], 0, sizeof(uint64_t) * (kBucketSize + 1));
+        memset(m_timestamps[i], 0, sizeof(uint64_t) * (kBucketSize + 1));
     }
 
     const int printTime = Options::i()->printTime();
@@ -78,9 +79,8 @@ double Hashrate::calc(size_t ms) const
 
     for (int i = 0; i < m_threads; ++i) {
         data = calc(i, ms);
-        if (isnormal(data)) {
+        if (isnormal(data))
             result += data;
-        }
     }
 
     return result;
@@ -96,7 +96,6 @@ double Hashrate::calc(size_t threadId, size_t ms) const
     uint64_t earliestStamp     = 0;
     uint64_t lastestStamp      = 0;
     uint64_t lastestHashCnt    = 0;
-    bool haveFullSet           = false;
 
     for (size_t i = 1; i < kBucketSize; i++) {
         const size_t idx = (m_top[threadId] - i) & kBucketMask;
@@ -109,21 +108,20 @@ double Hashrate::calc(size_t threadId, size_t ms) const
             lastestStamp = m_timestamps[threadId][idx];
             lastestHashCnt = m_counts[threadId][idx];
         }
-
-        if (now - m_timestamps[threadId][idx] > ms) {
-            haveFullSet = true;
-            break;
+        else {
+            if (now - m_timestamps[threadId][idx] > ms) {
+                earliestStamp = m_timestamps[threadId][idx];
+                earliestHashCount = m_counts[threadId][idx];
+                break;
+            }
         }
-
-        earliestStamp = m_timestamps[threadId][idx];
-        earliestHashCount = m_counts[threadId][idx];
     }
 
-    if (!haveFullSet || earliestStamp == 0 || lastestStamp == 0) {
+    if (earliestStamp == 0 || lastestStamp == 0) {
         return nan("");
     }
 
-    if (lastestStamp - earliestStamp == 0) {
+    if (lastestStamp == earliestStamp) {
         return nan("");
     }
 
@@ -142,22 +140,26 @@ void Hashrate::add(size_t threadId, uint64_t count, uint64_t timestamp)
     m_counts[threadId][top]     = count;
     m_timestamps[threadId][top] = timestamp;
 
+    if (m_timestamps[threadId][kBucketSize] == 0 && count > 0) {
+        m_timestamps[threadId][kBucketSize] = timestamp;
+        m_counts[threadId][kBucketSize] = count;
+    }
+
     m_top[threadId] = (top + 1) & kBucketMask;
 }
 
 
 void Hashrate::print()
 {
-    char num1[8];
-    char num2[8];
-    char num3[8];
-    char num4[8];
+    char num1[8], num2[8], num3[8];
+    double shortHashrate = calc(ShortInterval);
+    updateHighest(shortHashrate);
+    updateAverage();
 
-    LOG_INFO(Options::i()->colors() ? "\x1B[01;37mspeed\x1B[0m 2.5s/60s/15m \x1B[01;36m%s \x1B[22;36m%s %s \x1B[01;36mH/s\x1B[0m max: \x1B[01;36m%s H/s" : "speed 2.5s/60s/15m %s %s %s H/s max: %s H/s",
-             format(calc(ShortInterval),  num1, sizeof(num1)),
-             format(calc(MediumInterval), num2, sizeof(num2)),
-             format(calc(LargeInterval),  num3, sizeof(num3)),
-             format(m_highest,            num4, sizeof(num4))
+    LOG_INFO(Options::i()->colors() ? "\x1B[01;37mspeed (H/s)  \x1B[0mcurrent \x1B[01;36m%s  \x1B[0mavg \x1B[01;36m%s  \x1B[0mmax \x1B[22;36m%s" : "speed (H/s)  current %s  avg %s  max %s",
+             format(shortHashrate,  num1, sizeof(num1)),
+             format(m_average,      num2, sizeof(num2)),
+             format(m_highest,      num3, sizeof(num3))
              );
 }
 
@@ -170,10 +172,40 @@ void Hashrate::stop()
 
 void Hashrate::updateHighest()
 {
-   double highest = calc(ShortInterval);
-   if (isnormal(highest) && highest > m_highest) {
-       m_highest = highest;
-   }
+   updateHighest(calc(ShortInterval));
+}
+
+
+void Hashrate::updateHighest(double hashrate)
+{
+    if (isnormal(hashrate) && hashrate > m_highest) {
+        m_highest = hashrate;
+    }
+}
+
+
+void Hashrate::updateAverage()
+{
+    double result = 0.0;
+    uint64_t hashes, t1, t2;
+    size_t idx = 0;
+
+    for (int i = 0; i < m_threads; ++i) {
+        idx = (m_top[i] - 1) & kBucketMask;
+        t1 = m_timestamps[i][kBucketSize];
+        t2 = m_timestamps[i][idx];
+        if (t1 && t2 && t1 < t2 ) {
+            hashes = m_counts[i][idx] - m_counts[i][kBucketSize];
+            result += ((double)hashes / ((double)(t2 - t1) / 1000.0));
+        }
+        else {
+            result = nan("");
+            break;
+        }
+    }
+
+    if (isnormal(result))
+        m_average = result;
 }
 
 

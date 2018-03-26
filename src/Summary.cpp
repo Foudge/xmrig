@@ -57,13 +57,20 @@ static void print_versions()
 
 
 static void print_memory() {
+    char buf[16];
+    snprintf(buf, 16, " (%u)", Mem::hugepagesErrorCode());
+
     if (Options::i()->colors()) {
-        Log::i()->text("\x1B[01;32m * \x1B[01;37mHUGE PAGES:   %s, %s",
+        Log::i()->text("\x1B[01;32m * \x1B[01;37mHUGE PAGES:   %s, %s%s",
                        Mem::isHugepagesAvailable() ? "\x1B[01;32mavailable" : "\x1B[01;31munavailable",
-                       Mem::isHugepagesEnabled() ? "\x1B[01;32menabled" : "\x1B[01;31mdisabled");
+                       Mem::isHugepagesEnabled() ? "\x1B[01;32menabled" : "\x1B[01;31mdisabled",
+                       Mem::hugepagesErrorCode() != 0 ? buf : "");
     }
     else {
-        Log::i()->text(" * HUGE PAGES:   %s, %s", Mem::isHugepagesAvailable() ? "available" : "unavailable", Mem::isHugepagesEnabled() ? "enabled" : "disabled");
+        Log::i()->text(" * HUGE PAGES:   %s, %s%s",
+                        Mem::isHugepagesAvailable() ? "available" : "unavailable",
+                        Mem::isHugepagesEnabled() ? "enabled" : "disabled",
+                        Mem::hugepagesErrorCode() != 0 ? buf : "");
     }
 }
 
@@ -143,10 +150,10 @@ static void print_api()
 static void print_commands()
 {
     if (Options::i()->colors()) {
-        Log::i()->text("\x1B[01;32m * \x1B[01;37mCOMMANDS:     \x1B[01;35mh\x1B[01;37mashrate, \x1B[01;35mp\x1B[01;37mause, \x1B[01;35mr\x1B[01;37mesume");
+        Log::i()->text("\x1B[01;32m * \x1B[01;37mCOMMANDS:     \x1B[01;35mh\x1B[01;37mashrate, \x1B[01;35ms\x1B[01;37mhares, \x1B[01;35mp\x1B[01;37mause, \x1B[01;35mr\x1B[01;37mesume");
     }
     else {
-        Log::i()->text(" * COMMANDS:     'h' hashrate, 'p' pause, 'r' resume");
+        Log::i()->text(" * COMMANDS:     'h' hashrate, 's' shares, 'p' pause, 'r' resume");
     }
 }
 

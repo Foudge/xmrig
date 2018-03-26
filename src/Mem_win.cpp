@@ -164,6 +164,7 @@ bool Mem::allocate(int algo, int threads, bool doubleHash, bool enabled)
 
     m_memory = static_cast<uint8_t*>(VirtualAlloc(NULL, size, MEM_COMMIT | MEM_RESERVE | MEM_LARGE_PAGES, PAGE_READWRITE));
     if (!m_memory) {
+        m_hugepages_errorcode = (uint32_t)GetLastError();
         m_memory = static_cast<uint8_t*>(_mm_malloc(size, 16));
     }
     else {

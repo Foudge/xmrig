@@ -37,7 +37,8 @@ class NetworkState
 public:
     NetworkState();
 
-    int connectionTime() const;
+    uint32_t totalTime() const;
+    uint32_t connectionTime() const;
     uint32_t avgTime() const;
     uint32_t latency() const;
     void add(const SubmitResult &result, const char *error);
@@ -56,6 +57,7 @@ private:
     bool m_active;
     std::vector<uint16_t> m_latency;
     uint64_t m_connectionTime;
+    uint32_t m_totalTime;
 };
 
 #endif /* __NETWORKSTATE_H__ */
