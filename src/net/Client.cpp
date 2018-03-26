@@ -62,6 +62,8 @@ Client::Client(int id, const char *agent, IClientListener *listener) :
     m_failures(0),
     m_recvBufPos(0),
     m_state(UnconnectedState),
+    m_lastNicehashCheck(0),
+    m_lastNicehashActivity(0),
     m_expire(0),
     m_stream(nullptr),
     m_socket(nullptr)
@@ -115,6 +117,8 @@ void Client::disconnect()
     uv_timer_stop(&m_keepAliveTimer);
 #   endif
 
+    m_lastNicehashCheck = 0;
+    m_lastNicehashActivity = 0;
     m_expire   = 0;
     m_failures = -1;
 
@@ -134,6 +138,17 @@ void Client::setUrl(const Url *url)
 
 void Client::tick(uint64_t now)
 {
+    if (m_expire == 0 && m_state == ConnectedState && m_url.isNicehash()) {
+        if (m_lastNicehashCheck != 0 && (now - m_lastNicehashCheck) > kNicehashCheckPeriod) {
+            m_lastNicehashCheck += kNicehashCheckPeriod;
+            if (m_lastNicehashActivity == 0 || (now - m_lastNicehashActivity + kNicehashCheckOffset) > kMaxNicehashInactivity) {
+                LOG_NOTICE("Nicehash auto-reconnection due to inactivity timeout");
+                reconnect(500, false);
+            }
+        }
+        return;
+    }
+
     if (m_expire == 0 || now < m_expire) {
         return;
     }
@@ -142,7 +157,6 @@ void Client::tick(uint64_t now)
         LOG_DEBUG_ERR("[%s:%u] timeout", m_url.host(), m_url.port());
         close();
     }
-
 
     if (m_state == ConnectingState) {
         connect();
@@ -170,7 +184,12 @@ int64_t Client::submit(const JobResult &result)
                                  m_sequence, m_rpcId, result.jobId.data(), nonce, data);
 
     m_results[m_sequence] = SubmitResult(m_sequence, result.diff, result.actualDiff());
-    return send(size);
+    int64_t sequence = send(size);
+    if (sequence != -1) {
+        if (m_url.isNicehash())
+            m_lastNicehashActivity = uv_now(uv_default_loop());
+    }
+    return sequence;
 }
 
 
@@ -252,6 +271,8 @@ int Client::resolve(const char *host)
 {
     setState(HostLookupState);
 
+    m_lastNicehashCheck = 0;
+    m_lastNicehashActivity = 0;
     m_expire     = 0;
     m_recvBufPos = 0;
 
@@ -329,7 +350,7 @@ void Client::connect(struct sockaddr *addr)
 }
 
 
-void Client::login()
+bool Client::login()
 {
     m_results.clear();
 
@@ -355,14 +376,14 @@ void Client::login()
 
     const size_t size = buffer.GetSize();
     if (size > (sizeof(m_buf) - 2)) {
-        return;
+        return false;
     }
 
     memcpy(m_sendBuf, buffer.GetString(), size);
     m_sendBuf[size]     = '\n';
     m_sendBuf[size + 1] = '\0';
 
-    send(size + 1);
+    return (send(size + 1) != -1);
 }
 
 
@@ -480,7 +501,7 @@ void Client::ping()
 }
 
 
-void Client::reconnect()
+void Client::reconnect(int retryPause, bool failure)
 {
     setState(ConnectingState);
 
@@ -494,10 +515,11 @@ void Client::reconnect()
         return m_listener->onClose(this, -1);
     }
 
-    m_failures++;
+    if (failure)
+        m_failures++;
     m_listener->onClose(this, (int) m_failures);
 
-    m_expire = uv_now(uv_default_loop()) + m_retryPause;
+    m_expire = uv_now(uv_default_loop()) + (retryPause > 0 ? retryPause : m_retryPause);
 }
 
 
@@ -570,7 +592,10 @@ void Client::onConnect(uv_connect_t *req, int status)
     uv_read_start(client->m_stream, Client::onAllocBuffer, Client::onRead);
     delete req;
 
-    client->login();
+    if (client->login()) {
+        if (client->m_url.isNicehash())
+            client->m_lastNicehashCheck = uv_now(uv_default_loop()) - kNicehashCheckOffset;
+    }
 }
 
 
@@ -578,8 +603,11 @@ void Client::onRead(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf)
 {
     auto client = getClient(stream->data);
     if (nread < 0) {
-        if (nread != UV_EOF && !client->m_quiet) {
-            LOG_ERR("[%s:%u] read error: \"%s\"", client->m_url.host(), client->m_url.port(), uv_strerror((int) nread));
+        if (!client->m_quiet) {
+            if (nread != UV_EOF)
+                LOG_ERR("[%s:%u] read error: \"%s\"", client->m_url.host(), client->m_url.port(), uv_strerror((int)nread));
+            else
+                LOG_ERR("[%s:%u] connection closed", client->m_url.host(), client->m_url.port());
         }
 
         return client->close();

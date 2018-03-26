@@ -52,6 +52,9 @@ public:
 
     constexpr static int kResponseTimeout  = 20 * 1000;
     constexpr static int kKeepAliveTimeout = 60 * 1000;
+    constexpr static int kNicehashCheckPeriod = 600 * 1000;     // 10 min
+    constexpr static int kMaxNicehashInactivity = 300 * 1000;   // 5 min
+    constexpr static int kNicehashCheckOffset = 10 * 1000;           // 10 sec
 
     Client(int id, const char *agent, IClientListener *listener);
     ~Client();
@@ -81,12 +84,12 @@ private:
     int64_t send(size_t size);
     void close();
     void connect(struct sockaddr *addr);
-    void login();
+    bool login();
     void parse(char *line, size_t len);
     void parseNotification(const char *method, const rapidjson::Value &params, const rapidjson::Value &error);
     void parseResponse(int64_t id, const rapidjson::Value &result, const rapidjson::Value &error);
     void ping();
-    void reconnect();
+    void reconnect(int retryPause = 0, bool failure = true);
     void setState(SocketState state);
     void startTimeout();
 
@@ -114,6 +117,8 @@ private:
     SocketState m_state;
     static int64_t m_sequence;
     std::map<int64_t, SubmitResult> m_results;
+    uint64_t m_lastNicehashCheck;
+    uint64_t m_lastNicehashActivity;
     uint64_t m_expire;
     Url m_url;
     uv_buf_t m_recvBuf;
