@@ -57,6 +57,7 @@ public:
     static Options *parse(int argc, char **argv);
 
     inline bool background() const                { return m_background; }
+    inline bool benchmark() const                 { return m_benchmark; }
     inline bool colors() const                    { return m_colors; }
     inline bool doubleHash() const                { return m_doubleHash; }
     inline bool hugePages() const                 { return m_hugePages; }
@@ -108,6 +109,7 @@ private:
 #   endif
 
     bool m_background;
+    bool m_benchmark;
     bool m_colors;
     bool m_doubleHash;
     bool m_hugePages;

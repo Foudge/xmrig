@@ -48,6 +48,13 @@ xmrig.exe -o pool.monero.hashvault.pro:5555 -u YOUR_WALLET1 -p x -k -o pool.supp
 ```
 For failover you can add multiple pools, maximum count not limited.
 
+### Benchmark mode
+```
+xmrig.exe --thread 4 --cpu-affinity 0xAA --benchmark
+```
+This mode run offline, so there isn't productive mining work.
+It's a easy, fast and accurate way to compare some settings or binaries performances.
+
 ### Options
 ```
   -a, --algo=ALGO          cryptonight (default) or cryptonight-lite
@@ -67,6 +74,7 @@ For failover you can add multiple pools, maximum count not limited.
       --donate-level=N     donate level, default 5% (5 minutes in 100 minutes)
       --user-agent         set custom user-agent string for pool
   -B, --background         run the miner in the background
+      --benchmark          run the miner in offline benchmark mode
   -c, --config=FILE        load a JSON-format configuration file
   -l, --log-file=FILE      log all output to a file
       --max-cpu-usage=N    maximum CPU usage for automatic threads mode (default 75)

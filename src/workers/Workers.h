@@ -46,7 +46,7 @@ public:
     static void printHashrate(bool detail);
     static void setEnabled(bool enabled);
     static void setJob(const Job &job);
-    static void start(int64_t affinity, int priority);
+    static void start(int64_t affinity, int priority, bool benchmark);
     static void stop();
     static void submit(const JobResult &result);
 
@@ -66,6 +66,7 @@ private:
 
     static bool m_active;
     static bool m_enabled;
+    static bool m_benchmark;
     static Hashrate *m_hashrate;
     static IJobResultListener *m_listener;
     static Job m_job;

@@ -33,9 +33,10 @@ class IWorker
 public:
     virtual ~IWorker() {}
 
-    virtual uint64_t hashCount() const = 0;
-    virtual uint64_t timestamp() const = 0;
-    virtual void start()               = 0;
+    virtual uint64_t hashCount() const      = 0;
+    virtual uint64_t timestamp() const      = 0;
+    virtual void start()                    = 0;
+    virtual void setBenchmark(bool enable)  = 0;
 };
 
 

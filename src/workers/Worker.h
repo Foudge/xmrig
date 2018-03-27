@@ -44,6 +44,7 @@ public:
 
     inline uint64_t hashCount() const override { return m_hashCount.load(std::memory_order_relaxed); }
     inline uint64_t timestamp() const override { return m_timestamp.load(std::memory_order_relaxed); }
+    inline void setBenchmark(bool enable) override { m_benchmark = enable; }
 
 protected:
     void storeStats();
@@ -55,6 +56,7 @@ protected:
     std::atomic<uint64_t> m_timestamp;
     uint64_t m_count;
     uint64_t m_sequence;
+    bool m_benchmark;
 };
 
 

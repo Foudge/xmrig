@@ -140,9 +140,12 @@ int App::exec()
     m_httpd->start();
 #   endif
 
-    Workers::start(m_options->affinity(), m_options->priority());
+    Workers::start(m_options->affinity(), m_options->priority(), m_options->benchmark());
 
-    m_network->connect();
+    if (m_options->benchmark())
+        LOG_NOTICE(m_options->colors() ? "\x1B[01;33mBENCHMARK MODE!" : "BENCHMARK MODE!");
+    else
+        m_network->connect();
 
     const int r = uv_run(uv_default_loop(), UV_RUN_DEFAULT);
     uv_loop_close(uv_default_loop());

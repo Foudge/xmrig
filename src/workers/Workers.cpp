@@ -37,6 +37,7 @@
 
 bool Workers::m_active = false;
 bool Workers::m_enabled = true;
+bool Workers::m_benchmark = false;
 Hashrate *Workers::m_hashrate = nullptr;
 IJobResultListener *Workers::m_listener = nullptr;
 Job Workers::m_job;
@@ -53,11 +54,21 @@ uv_timer_t Workers::m_timer;
 
 Job Workers::job()
 {
-    uv_rwlock_rdlock(&m_rwlock);
-    Job job = m_job;
-    uv_rwlock_rdunlock(&m_rwlock);
-
-    return job;
+    if (!m_benchmark)
+    {
+        uv_rwlock_rdlock(&m_rwlock);
+        Job job = m_job;
+        uv_rwlock_rdunlock(&m_rwlock);
+        return job;
+    }
+    else
+    {
+        Job job(0, false);
+        job.setId("0123456789abcdef");
+        job.setBlob("010189abe8d505418844323898e4f317cb932428483c0789c39f10d1beb128a6ded0da46f55ea8000000329651a55d1e6ff3dcc0386d793323f2c76056320a76a08b345ad7c0f41b64ed0901");
+        job.setTarget("e2530000");
+        return job;
+    }
 }
 
 
@@ -99,7 +110,7 @@ void Workers::setJob(const Job &job)
 }
 
 
-void Workers::start(int64_t affinity, int priority)
+void Workers::start(int64_t affinity, int priority, bool benchmark)
 {
     const int threads = Mem::threads();
     m_hashrate = new Hashrate(threads);
@@ -108,7 +119,8 @@ void Workers::start(int64_t affinity, int priority)
     uv_rwlock_init(&m_rwlock);
 
     m_sequence = 1;
-    m_paused   = 1;
+    m_benchmark = benchmark;
+    m_paused = benchmark ? 0 : 1;
 
     uv_async_init(uv_default_loop(), &m_async, Workers::onResult);
     uv_timer_init(uv_default_loop(), &m_timer);
@@ -147,11 +159,14 @@ void Workers::stop()
 
 void Workers::submit(const JobResult &result)
 {
-    uv_mutex_lock(&m_mutex);
-    m_queue.push_back(result);
-    uv_mutex_unlock(&m_mutex);
+    if (!m_benchmark)
+    {
+        uv_mutex_lock(&m_mutex);
+        m_queue.push_back(result);
+        uv_mutex_unlock(&m_mutex);
 
-    uv_async_send(&m_async);
+        uv_async_send(&m_async);
+    }
 }
 
 
@@ -165,6 +180,7 @@ void Workers::onReady(void *arg)
         handle->setWorker(new SingleWorker(handle));
     }
 
+    handle->worker()->setBenchmark(m_benchmark);
     handle->worker()->start();
 }
 

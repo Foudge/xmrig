@@ -77,6 +77,7 @@ Options:\n\
       --donate-level=N     donate level, default 5%% (5 minutes in 100 minutes)\n\
       --user-agent         set custom user-agent string for pool\n\
   -B, --background         run the miner in the background\n\
+      --benchmark          run the miner in offline benchmark mode\n\
   -c, --config=FILE        load a JSON-format configuration file\n\
   -l, --log-file=FILE      log all output to a file\n"
 # ifdef HAVE_SYSLOG_H
@@ -103,6 +104,7 @@ static struct option const options[] = {
     { "algo",             1, nullptr, 'a'  },
     { "av",               1, nullptr, 'v'  },
     { "background",       0, nullptr, 'B'  },
+    { "benchmark",        0, nullptr, 1010 },
     { "config",           1, nullptr, 'c'  },
     { "cpu-affinity",     1, nullptr, 1020 },
     { "cpu-priority",     1, nullptr, 1021 },
@@ -137,6 +139,7 @@ static struct option const config_options[] = {
     { "algo",          1, nullptr, 'a'  },
     { "av",            1, nullptr, 'v'  },
     { "background",    0, nullptr, 'B'  },
+    { "benchmark",     0, nullptr, 1010 },
     { "colors",        0, nullptr, 2000 },
     { "cpu-affinity",  1, nullptr, 1020 },
     { "cpu-priority",  1, nullptr, 1021 },
@@ -203,6 +206,7 @@ const char *Options::algoName() const
 
 Options::Options(int argc, char **argv) :
     m_background(false),
+    m_benchmark(false),
     m_colors(true),
     m_doubleHash(false),
     m_hugePages(true),
@@ -384,6 +388,7 @@ bool Options::parseArg(int key, const char *arg)
     case 'S':  /* --syslog */
     case 1005: /* --safe */
     case 1006: /* --nicehash */
+    case 1010: /* --benchmark */
         return parseBoolean(key, true);
 
     case 1002: /* --no-color */
@@ -551,6 +556,10 @@ bool Options::parseBoolean(int key, bool enable)
 
     case 1009: /* --no-huge-pages */
         m_hugePages = enable;
+        break;
+
+    case 1010: /* --benchmark */
+        m_benchmark = enable;
         break;
 
     case 2000: /* colors */
