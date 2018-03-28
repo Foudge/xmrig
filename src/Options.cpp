@@ -249,11 +249,11 @@ Options::Options(int argc, char **argv) :
         return;
     }
 
-    if (!m_pools[0]->isValid()) {
+    if (!m_pools[0]->isValid() && !m_benchmark) {
         parseConfig(Platform::defaultConfigName());
     }
 
-    if (!m_pools[0]->isValid()) {
+    if (!m_pools[0]->isValid() && !m_benchmark) {
         fprintf(stderr, "No pool URL supplied. Exiting.\n");
         return;
     }

@@ -50,7 +50,7 @@ For failover you can add multiple pools, maximum count not limited.
 
 ### Benchmark mode
 ```
-xmrig.exe --thread 4 --cpu-affinity 0xAA --benchmark
+xmrig.exe --thread 4 --cpu-affinity 0xAA --print-time 10 --benchmark
 ```
 This mode run offline, so there isn't productive mining work.
 It's a easy, fast and accurate way to compare some settings or binaries performances.
